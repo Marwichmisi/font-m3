@@ -17,5 +17,23 @@
   "devDependencies": {
     "@types/bun": "latest",
     "typescript": "^5.7.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Marwichmisi/font-m3.git"
+  },
+  "homepage": "https://github.com/Marwichmisi/font-m3#readme",
+  "bugs": {
+    "url": "https://github.com/Marwichmisi/font-m3/issues"
+  },
+  "keywords": [
+    "google fonts",
+    "jetpack compose",
+    "material 3",
+    "android",
+    "typography",
+    "font",
+    "cli"
+  ],
+  "license": "MIT"
 }

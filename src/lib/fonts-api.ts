@@ -1,5 +1,6 @@
 import { CliError } from "./errors.js";
 import { log } from "./logger.js";
+import { toKotlinWeight, toLabel } from "./weights.js";
 
 const METADATA_URL = "https://fonts.google.com/metadata/fonts";
 const CSS_API_URL = "https://fonts.googleapis.com/css2";
@@ -26,8 +27,6 @@ interface FontsResponse {
   familyMetadataList: FontMetadata[];
 }
 
-const metadataCache: { data: FontMetadata[]; ts: number } | null = null;
-
 async function fetchMetadata(): Promise<FontMetadata[]> {
   const res = await fetch(METADATA_URL, {
     headers: { "User-Agent": "font-m3-cli/0.1.0" },
@@ -44,6 +43,11 @@ export async function getAllFonts(): Promise<FontMetadata[]> {
   if (cachedMetadata) return cachedMetadata;
   cachedMetadata = await fetchMetadata();
   return cachedMetadata;
+}
+
+export function clearCache(): void {
+  cachedMetadata = null;
+  variantUrlCache.clear();
 }
 
 export async function listFonts(opts: {
@@ -152,16 +156,10 @@ export async function downloadFont(family: string, variant: FontVariant, outdir:
 }
 
 export function generateComposeCode(family: string, variants: FontVariant[], pkg?: string): string {
-  const varNames = variants.map((v) => {
-    const weightLabel = getWeightLabel(parseInt(v.weight));
-    const italicLabel = v.italic ? "Italic" : "";
-    return `${weightLabel}${italicLabel}`.replace(/ /g, "");
-  });
   const safeFamily = family.replace(/[^a-zA-Z0-9]/g, "_");
 
-  const fontEntries = variants.map((v, i) => {
-    const weight = v.weight;
-    const fontWeight = getWeightKotlin(parseInt(v.weight));
+  const fontEntries = variants.map((v) => {
+    const fontWeight = toKotlinWeight(parseInt(v.weight));
     const style = v.italic ? ", FontStyle.Italic" : "";
     const filename = `${family.toLowerCase().replace(/ /g, "_")}_${v.weight}${v.italic ? "i" : ""}.ttf`;
     return `        Font(R.font.${filename.replace(/\.ttf$/, "")}, FontWeight.${fontWeight}${style})`;
@@ -184,10 +182,6 @@ ${fontEntries.join(",\n")}
 )
 
 `;
-
-  const weights = [...new Set(variants.map((v) => parseInt(v.weight)))].sort((a, b) => a - b);
-  const hasBold = weights.includes(700) || weights.includes(600);
-  const hasRegular = weights.includes(400);
 
   code += `// Material 3 Typography using ${family}
 // Use in your theme: MaterialTheme(colorScheme = scheme, typography = AppTypography)
@@ -316,41 +310,3 @@ export function generateCssCode(family: string, variants: FontVariant[]): string
 
   return lines.join("\n");
 }
-
-export const CATEGORIES = [
-  "Sans Serif",
-  "Serif",
-  "Display",
-  "Handwriting",
-  "Monospace",
-];
-
-function getWeightLabel(weight: number): string {
-  if (weight <= 100) return "Thin";
-  if (weight <= 200) return "ExtraLight";
-  if (weight <= 300) return "Light";
-  if (weight <= 400) return "Regular";
-  if (weight <= 500) return "Medium";
-  if (weight <= 600) return "SemiBold";
-  if (weight <= 700) return "Bold";
-  if (weight <= 800) return "ExtraBold";
-  return "Black";
-}
-
-function getWeightKotlin(weight: number): string {
-  if (weight <= 100) return "Thin";
-  if (weight <= 200) return "ExtraLight";
-  if (weight <= 300) return "Light";
-  if (weight <= 400) return "Normal";
-  if (weight <= 500) return "Medium";
-  if (weight <= 600) return "SemiBold";
-  if (weight <= 700) return "Bold";
-  if (weight <= 800) return "ExtraBold";
-  return "Black";
-}
-
-export function getCategories(): string[] {
-  return CATEGORIES;
-}
-
-export const FONT_FIELDS = ["family", "category", "popularity", "trending", "designers", "subsets", "variants"];

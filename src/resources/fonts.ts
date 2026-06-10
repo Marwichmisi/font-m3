@@ -1,9 +1,11 @@
 import { Command } from "commander";
 import { existsSync, mkdirSync } from "fs";
 import { join } from "path";
+import { platform } from "os";
 import { output } from "../lib/output.js";
-import { handleError } from "../lib/errors.js";
+import { handleError, CliError } from "../lib/errors.js";
 import { log } from "../lib/logger.js";
+import { toKotlinWeight } from "../lib/weights.js";
 import {
   listFonts,
   getFont,
@@ -11,7 +13,6 @@ import {
   downloadFont,
   generateComposeCode,
   generateCssCode,
-  getCategories,
 } from "../lib/fonts-api.js";
 
 interface ListOpts {
@@ -39,10 +40,12 @@ interface ComposeOpts {
   weights?: string;
   package?: string;
   output?: string;
+  json?: boolean;
 }
 
 interface CssOpts {
   weights?: string;
+  json?: boolean;
 }
 
 export const fontsResource = new Command("fonts")
@@ -54,7 +57,7 @@ fontsResource
   .option("-s, --search <query>", "Search fonts by name")
   .option("-c, --category <cat>", "Filter by category (Sans Serif, Serif, Display, Handwriting, Monospace)")
   .option("--sort <field>", "Sort by: popularity, name, dateAdded, trending (default: popularity)")
-  .option("-l, --limit <n>", "Max results to return", "50")
+  .option("-l, --limit <n>", "Max results to return (default: 50, 0 = no limit)")
   .option("--json", "Output as JSON")
   .option("--format <fmt>", "Output format: text, json, csv, yaml")
   .option("--fields <cols>", "Comma-separated columns to display (family,category,popularity,subsets)")
@@ -63,16 +66,17 @@ fontsResource
     "Examples:",
     "  font-m3-cli fonts list",
     "  font-m3-cli fonts list --search roboto",
-    "  font-m3-cli fonts list --category \"Sans Serif\" --limit 10",
+    '  font-m3-cli fonts list --category "Sans Serif" --limit 10',
     "  font-m3-cli fonts list --sort trending --json",
   ].join("\n"))
   .action(async (opts: ListOpts) => {
     try {
+      const limit = opts.limit ? parseInt(opts.limit) : 50;
       const fonts = await listFonts({
         search: opts.search,
         category: opts.category,
         sort: opts.sort,
-        limit: opts.limit ? parseInt(opts.limit) : 50,
+        limit: Number.isNaN(limit) || limit <= 0 ? 9999 : limit,
       });
 
       const data = fonts.map((f) => ({
@@ -89,7 +93,7 @@ fontsResource
       const fields = opts.fields?.split(",");
       output(data, { json: opts.json, format: opts.format, fields });
     } catch (err) {
-      handleError(err, opts.json);
+      handleError(err);
     }
   });
 
@@ -103,14 +107,14 @@ fontsResource
     "",
     "Examples:",
     "  font-m3-cli fonts info Roboto",
-    "  font-m3-cli fonts info \"Material Icons\" --json",
+    '  font-m3-cli fonts info "Material Icons" --json',
   ].join("\n"))
   .action(async (family: string, opts: InfoOpts) => {
     try {
       const font = await getFont(family);
       if (!font) {
-        log.error(`Font "${family}" not found`);
-        process.exit(1);
+        handleError(new CliError(2, `Font "${family}" not found`));
+        return;
       }
 
       const data = {
@@ -131,7 +135,7 @@ fontsResource
 
       output(data, { json: opts.json, format: opts.format });
     } catch (err) {
-      handleError(err, opts.json);
+      handleError(err);
     }
   });
 
@@ -147,14 +151,14 @@ fontsResource
     "Examples:",
     "  font-m3-cli fonts download Roboto",
     "  font-m3-cli fonts download Inter --weights 400,700,900",
-    "  font-m3-cli fonts download \"Source Code Pro\" -o ./my-fonts",
+    '  font-m3-cli fonts download "Source Code Pro" -o ./my-fonts',
   ].join("\n"))
   .action(async (family: string, opts: DownloadOpts) => {
     try {
       const font = await getFont(family);
       if (!font) {
-        log.error(`Font "${family}" not found`);
-        process.exit(1);
+        handleError(new CliError(2, `Font "${family}" not found`));
+        return;
       }
 
       const weightList = opts.weights ? opts.weights.split(",").map((w) => w.trim()) : undefined;
@@ -169,7 +173,7 @@ fontsResource
 
       if (variants.length === 0) {
         log.warn("No variants found for this font");
-        process.exit(0);
+        return;
       }
 
       log.info(`Downloading ${variants.length} variant(s) to ${outdir}/`);
@@ -188,7 +192,7 @@ fontsResource
         output(results, { json: true });
       }
     } catch (err) {
-      handleError(err, opts.json);
+      handleError(err);
     }
   });
 
@@ -199,19 +203,20 @@ fontsResource
   .option("-w, --weights <weights>", "Comma-separated weights to include (e.g. 400,700). Default: all")
   .option("-p, --package <pkg>", "Kotlin package name")
   .option("-o, --output <file>", "Output file path (default: stdout)")
+  .option("--json", "Output errors as JSON")
   .addHelpText("after", [
     "",
     "Examples:",
     "  font-m3-cli fonts compose Roboto",
     "  font-m3-cli fonts compose Inter --weights 400,700 -p com.myapp",
-    "  font-m3-cli fonts compose \"JetBrains Mono\" -o Typography.kt",
+    '  font-m3-cli fonts compose "JetBrains Mono" -o Typography.kt',
   ].join("\n"))
   .action(async (family: string, opts: ComposeOpts) => {
     try {
       const font = await getFont(family);
       if (!font) {
-        log.error(`Font "${family}" not found`);
-        process.exit(1);
+        handleError(new CliError(2, `Font "${family}" not found`));
+        return;
       }
 
       const weightList = opts.weights ? opts.weights.split(",").map((w) => w.trim()) : undefined;
@@ -219,7 +224,7 @@ fontsResource
 
       if (variants.length === 0) {
         log.warn("No variants found for this font");
-        process.exit(0);
+        return;
       }
 
       const code = generateComposeCode(family, variants, opts.package);
@@ -240,6 +245,7 @@ fontsResource
   .description("Generate CSS @font-face declarations for a font family")
   .argument("<family>", "Font family name (e.g. Roboto, Inter)")
   .option("-w, --weights <weights>", "Comma-separated weights to include (e.g. 400,700). Default: all")
+  .option("--json", "Output errors as JSON")
   .addHelpText("after", [
     "",
     "Examples:",
@@ -250,8 +256,8 @@ fontsResource
     try {
       const font = await getFont(family);
       if (!font) {
-        log.error(`Font "${family}" not found`);
-        process.exit(1);
+        handleError(new CliError(2, `Font "${family}" not found`));
+        return;
       }
 
       const weightList = opts.weights ? opts.weights.split(",").map((w) => w.trim()) : undefined;
@@ -259,7 +265,7 @@ fontsResource
 
       if (variants.length === 0) {
         log.warn("No variants found for this font");
-        process.exit(0);
+        return;
       }
 
       console.log(generateCssCode(family, variants));
@@ -291,7 +297,8 @@ fontsResource
       url += `${sep}preview.size=${opts.weights}`;
     }
     log.info(`Opening ${url}`);
-    Bun.spawn(["xdg-open", url], { detached: true });
+    const openCmd = platform() === "darwin" ? "open" : platform() === "win32" ? "start" : "xdg-open";
+    Bun.spawn([openCmd, url], { detached: true });
   });
 
 fontsResource
@@ -306,7 +313,7 @@ fontsResource
   ].join("\n"))
   .action(async (opts: { json?: boolean; format?: string }) => {
     try {
-      const fonts = await listFonts({ limit: 2000 });
+      const fonts = await listFonts({ limit: 9999 });
       const categories = [...new Set(fonts.map((f) => f.category))].sort();
       const data = categories.map((cat) => {
         const count = fonts.filter((f) => f.category === cat).length;
@@ -314,6 +321,6 @@ fontsResource
       });
       output(data, { json: opts.json, format: opts.format });
     } catch (err) {
-      handleError(err, opts.json);
+      handleError(err);
     }
   });

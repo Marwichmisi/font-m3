@@ -1,4 +1,5 @@
 import pc from "picocolors";
+import { globalFlags } from "./config.js";
 
 /** Exit code constants */
 export const EXIT = {
@@ -60,7 +61,8 @@ function parseStatusCode(msg: string): number | null {
  * Handle errors consistently. Outputs JSON or human-readable
  * depending on the --json flag, then exits with proper code.
  */
-export function handleError(err: unknown, json = false): never {
+export function handleError(err: unknown): never {
+  const json = globalFlags.json;
   if (err instanceof CliError) {
     if (json) {
       console.error(JSON.stringify(err.toJSON(), null, 2));

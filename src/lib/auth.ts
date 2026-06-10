@@ -31,6 +31,4 @@ export function maskToken(token: string): string {
   return `${token.slice(0, 4)}...${token.slice(-4)}`;
 }
 
-export function buildAuthHeaders(): Record<string, string> {
-  return {};
-}
+
