@@ -6,9 +6,18 @@
   "bin": {
     "font-m3-cli": "./dist/index.js"
   },
+  "files": [
+    "dist/",
+    "README.md",
+    "skills/font-m3-cli/SKILL.md"
+  ],
   "scripts": {
     "build": "bun build src/index.ts --outfile dist/index.js --target bun",
-    "dev": "bun run src/index.ts"
+    "dev": "bun run src/index.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "prepublish": "bun run build"
   },
   "dependencies": {
     "commander": "^13.0.0",

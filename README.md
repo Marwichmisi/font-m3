@@ -40,7 +40,7 @@ font-m3-cli fonts categories
 
 ## Features
 
-- **Search** — 1,900+ Google Fonts with search, category filter, and sort
+- **Search** — 1,900+ Google Fonts with search, category filter, sort, and unlimited results (`--limit 0`)
 - **Download** — Download .ttf files by weight
 - **Compose** — Generate Kotlin FontFamily + Material 3 Typography code
 - **CSS** — Generate @font-face declarations with CDN URLs

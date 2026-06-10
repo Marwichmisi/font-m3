@@ -65,8 +65,10 @@ Always use `--json` flag when calling commands programmatically.
 Google Fonts public API does **not** require authentication. The `auth` commands are provided for the optional Google Developer API key (not needed for basic usage).
 
 ```bash
-font-m3-cli auth show    # Check if a key is configured
-font-m3-cli auth remove  # Remove the key
+font-m3-cli auth set "your-key"  # Save a Google API key (optional)
+font-m3-cli auth show            # Check if a key is configured
+font-m3-cli auth remove          # Remove the key
+font-m3-cli auth test            # Validate the key against the API
 ```
 
 ## Resources
@@ -75,11 +77,11 @@ font-m3-cli auth remove  # Remove the key
 
 | Command | Arguments | Flags | Description |
 |---------|-----------|-------|-------------|
-| `list` | — | `--search`, `--category`, `--sort`, `--limit`, `--fields`, `--json`, `--format` | List fonts with optional filtering |
+| `list` | — | `--search`, `--category`, `--sort`, `--limit` (0=all), `--fields`, `--json`, `--format` | List fonts with optional filtering |
 | `info` | `<family>` | `--json`, `--format` | Get font family details |
 | `download` | `<family>` | `--weights`, `--outdir`, `--json` | Download .ttf font files |
-| `compose` | `<family>` | `--weights`, `--package`, `--output` | Generate Jetpack Compose + M3 code |
-| `css` | `<family>` | `--weights` | Generate CSS @font-face declarations |
+| `compose` | `<family>` | `--weights`, `--package`, `--output`, `--json` | Generate Jetpack Compose + M3 code |
+| `css` | `<family>` | `--weights`, `--json` | Generate CSS @font-face declarations |
 | `preview` | `<family>` | `--text`, `--weights` | Open Google Fonts preview in browser |
 | `categories` | — | `--json`, `--format` | List all categories with font counts |
 
@@ -96,7 +98,7 @@ font-m3-cli auth remove  # Remove the key
 { "ok": true, "data": [ ... ], "meta": { "total": 42 } }
 ```
 
-On error: `{ "ok": false, "error": { "message": "...", "status": 1 } }`
+On error: `{ "ok": false, "error": { "code": 2, "message": "...", "suggestion": "..." } }`
 
 ## Quick Reference
 
