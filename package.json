@@ -1,6 +1,6 @@
 {
   "name": "font-m3-cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Search, download, and generate code for Google Fonts — Android Jetpack Compose, Material 3, and web",
   "type": "module",
   "bin": {
