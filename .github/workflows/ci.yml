@@ -37,5 +37,7 @@ jobs:
       - run: bun run build
 
       - uses: JS-DevTools/npm-publish@v3
+        continue-on-error: true
         with:
           token: ${{ secrets.NPM_TOKEN }}
+          access: public
