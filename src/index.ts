@@ -2,6 +2,7 @@
 import { Command } from "commander";
 import { globalFlags } from "./lib/config.js";
 import { authCommand } from "./commands/auth.js";
+import { initCommand } from "./commands/init.js";
 import { fontsResource } from "./resources/fonts.js";
 import { themeResource } from "./resources/theme.js";
 
@@ -26,6 +27,7 @@ program
   });
 
 program.addCommand(authCommand);
+program.addCommand(initCommand);
 program.addCommand(fontsResource);
 program.addCommand(themeResource);
 

@@ -28,6 +28,7 @@ Use the `font-m3-cli` skill when you need to:
 - **fonts preview** — Open the Google Fonts specimen page for a font in the browser
 - **fonts categories** — List all font categories with font counts (Sans Serif, Serif, Display, etc.)
 - **theme init** — Scaffold a complete Material 3 theme: Font.kt, Type.kt, Theme.kt, Color.kt
+- **init** — Install the skill into the current project (`.agents/`, `.claude/`, `.opencode/`)
 
 No API key required — uses the public Google Fonts metadata endpoint and CSS API.
 
@@ -85,6 +86,12 @@ font-m3-cli auth test            # Validate the key against the API
 | `preview` | `<family>` | `--text`, `--weights` | Open Google Fonts preview in browser |
 | `categories` | — | `--json`, `--format` | List all categories with font counts |
 
+### init — Install skill locally
+
+| Command | Arguments | Flags | Description |
+|---------|-----------|-------|-------------|
+| `init` | — | — | Symlink the skill into `.agents`, `.claude`, or `.opencode` in the current project |
+
 ### theme — Generate Material 3 theme files
 
 | Command | Arguments | Flags | Description |
@@ -104,6 +111,7 @@ On error: `{ "ok": false, "error": { "code": 2, "message": "...", "suggestion": 
 
 ```bash
 font-m3-cli --help                              # List all resources and global flags
+font-m3-cli init                                # Install skill in current project
 font-m3-cli fonts --help                        # List all font actions
 font-m3-cli fonts list --search inter           # Search fonts by name
 font-m3-cli fonts list --category Monospace     # Filter by category

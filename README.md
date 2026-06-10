@@ -13,6 +13,9 @@ npx api2cli install font-m3-cli
 ## Quick Start
 
 ```bash
+# Init skill in current project
+font-m3-cli init
+
 # List fonts
 font-m3-cli fonts list
 font-m3-cli fonts list --search inter --limit 5
